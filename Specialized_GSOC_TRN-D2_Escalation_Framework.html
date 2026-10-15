@@ -1,0 +1,1114 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GSOC-TRN-D2 · The escalation framework</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root{
+  --ink:#0A0C12;
+  --panel:#141822;
+  --panel-2:#1C2230;
+  --line:#2A3242;
+  --line-soft:#1F2633;
+  --bone:#E8EAEF;
+  --muted:#92989B;
+  --prism:#512FFF;
+  --prism-deep:#3F1DF8;
+  --crimson:#C8283C;
+  --amber:#F0B429;
+  --green:#4FBF8B;
+  --display:"Oswald","Arial Narrow",Haettenschweiler,Impact,sans-serif;
+  --body:"Spectral",Iowan Old Style,"Palatino Linotype",Georgia,serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ink);
+  background-image:radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:7px 7px;
+  color:var(--bone);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px 90px}
+
+/* ---------- masthead ---------- */
+header.mast{border-bottom:2px solid var(--line);padding:34px 0 20px;margin-bottom:6px}
+.filetag{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--muted);display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+}
+.filetag b{color:var(--prism);font-weight:500}
+.trio{width:22px;height:20px;flex:0 0 auto;stroke:var(--prism);fill:none}
+h1.title{
+  font-family:var(--display);font-weight:700;text-transform:uppercase;
+  font-size:clamp(34px,7.4vw,70px);line-height:.94;letter-spacing:-.01em;margin:14px 0 6px;
+}
+h1.title .a{color:var(--prism)}
+h1.title .tagbox{
+  display:inline-block;font-size:.34em;vertical-align:middle;
+  color:var(--ink);background:var(--bone);padding:2px 9px;margin:0 10px 0 0;transform:rotate(-4deg);
+}
+.dek{color:var(--muted);max-width:66ch;font-size:15px}
+.srcline{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);margin-top:12px}
+.srcline b{color:var(--bone);font-weight:500}
+
+/* ---------- nav ---------- */
+nav.tabs{
+  position:sticky;top:0;z-index:40;background:rgba(10,12,18,.94);
+  backdrop-filter:blur(6px);border-bottom:1px solid var(--line);
+  display:flex;gap:2px;overflow-x:auto;margin:0 -18px 26px;padding:0 18px;scrollbar-width:none;
+}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{
+  flex:0 0 auto;background:none;border:0;border-bottom:3px solid transparent;
+  color:var(--muted);font-family:var(--display);text-transform:uppercase;
+  letter-spacing:.12em;font-size:13px;font-weight:500;padding:16px 14px;cursor:pointer;
+}
+nav.tabs button:hover{color:var(--bone)}
+nav.tabs button[aria-selected="true"]{color:var(--bone);border-bottom-color:var(--prism)}
+nav.tabs button .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:7px;opacity:0;transition:opacity .2s}
+nav.tabs button.done .dot{opacity:1}
+
+/* ---------- progress ---------- */
+.progress{display:flex;align-items:center;gap:12px;margin:0 0 28px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.bar{flex:1;height:6px;background:var(--panel-2);position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--prism-deep),var(--prism));transition:width .45s ease}
+
+/* ---------- generic ---------- */
+section.view{display:none;animation:fade .3s ease}
+section.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h2{font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;font-size:clamp(24px,4vw,34px);font-weight:700;margin:0 0 4px}
+h3{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:17px;font-weight:500;margin:34px 0 12px;color:var(--bone)}
+.sub{color:var(--muted);font-size:14px;margin:0 0 24px;max-width:70ch}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--prism)}
+.eyebrow.alt{color:var(--amber)}
+.panel{background:var(--panel);border:1px solid var(--line);padding:20px}
+.hint{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.btn{font-family:var(--display);text-transform:uppercase;letter-spacing:.12em;font-size:13px;background:var(--bone);color:var(--ink);border:0;padding:11px 20px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--prism);color:#fff}
+.btn.ghost{background:none;color:var(--bone);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--panel-2);color:var(--bone)}
+.btn.danger:hover{background:var(--crimson);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input[type=text]{background:var(--panel-2);border:1px solid var(--line);color:var(--bone);padding:10px 12px;font-family:var(--mono);font-size:13px;min-width:0}
+input[type=text]:focus{outline:2px solid var(--prism);outline-offset:1px}
+:focus-visible{outline:2px solid var(--prism);outline-offset:2px}
+.sopref{font-family:var(--mono);font-size:.86em;color:var(--prism);white-space:nowrap}
+.ctrl{border-left:3px solid var(--prism);background:var(--panel-2);padding:14px 16px;margin:18px 0}
+.ctrl .lab{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--prism);display:block;margin-bottom:6px}
+.ctrl p{margin:0;font-size:15px}
+
+/* ---------- ledger ---------- */
+.ledger{border-top:1px solid var(--line)}
+.row{border-bottom:1px solid var(--line);padding:14px 0}
+.row .label{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cell{padding:12px 14px;background:var(--panel);border-left:3px solid var(--prism);font-size:15px}
+.cell.b{border-left-color:var(--muted)}
+.cell.b.neg{border-left-color:var(--crimson)}
+.cell .who{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:var(--prism);display:block;margin-bottom:5px}
+.cell.b .who{color:var(--muted)}
+.cell.b.neg .who{color:var(--crimson)}
+.reveal{cursor:pointer;position:relative}
+.reveal .masked{color:transparent;background:var(--panel-2);user-select:none}
+.reveal .masked::after{content:"tap to reveal";position:absolute;inset:auto 14px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.reveal.open{cursor:default}
+
+/* ---------- gallery ---------- */
+.side-switch{display:flex;gap:0;margin:0 0 22px;border:1px solid var(--line);width:max-content;max-width:100%;flex-wrap:wrap}
+.side-switch button{background:none;border:0;color:var(--muted);font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;font-size:12px;padding:12px 22px;cursor:pointer}
+.side-switch button.on{background:var(--prism);color:#fff}
+.side-switch button.on.alt{background:var(--amber);color:var(--ink)}
+.dossiers{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--prism);padding:16px;cursor:pointer;transition:transform .18s ease,border-color .18s}
+.card.alt{border-top-color:var(--amber)}
+.card:hover{transform:translateY(-3px);border-color:var(--muted)}
+.card .no{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.2em}
+.card .nm{font-family:var(--display);text-transform:uppercase;font-size:21px;font-weight:700;line-height:1.08;margin:6px 0 2px}
+.card .real{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.card .teaser{font-size:14px;color:var(--muted);margin-top:10px}
+.card .more{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--prism);margin-top:12px;display:block}
+.card.alt .more{color:var(--amber)}
+.card.read{border-color:var(--green)}
+
+.scrim{position:fixed;inset:0;background:rgba(4,5,9,.84);display:none;z-index:80;overflow-y:auto;padding:24px 14px}
+.scrim.on{display:block}
+.dossier{max-width:660px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--prism);padding:24px;position:relative}
+.dossier.alt{border-top-color:var(--amber)}
+.dossier h4{font-family:var(--display);text-transform:uppercase;font-size:30px;margin:8px 0 2px;font-weight:700;line-height:1.02}
+.dossier .close{position:absolute;top:12px;right:12px;background:none;border:1px solid var(--line);color:var(--muted);width:34px;height:34px;cursor:pointer;font-size:18px;line-height:1}
+.dossier .close:hover{color:var(--bone);border-color:var(--bone)}
+.field{border-top:1px solid var(--line);padding:12px 0}
+.field .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.field .v{font-size:15px}
+.flap{margin-top:14px;border:1px dashed var(--line);padding:14px;cursor:pointer;background:var(--panel-2)}
+.flap .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--prism)}
+.flap .body{display:none;margin-top:8px;font-size:15px}
+.flap.open{border-style:solid;cursor:default}
+.flap.open .body{display:block}
+
+/* ---------- sort ---------- */
+.dnd-pool{display:flex;flex-wrap:wrap;gap:9px;min-height:56px;padding:14px;background:var(--panel);border:1px dashed var(--line);margin-bottom:18px}
+.chip{background:var(--panel-2);border:1px solid var(--line);padding:9px 13px;cursor:grab;font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:13px;user-select:none;max-width:100%}
+.chip:active{cursor:grabbing}
+.chip.picked{outline:2px solid var(--prism);outline-offset:2px}
+.chip.right{border-color:var(--green);color:var(--green)}
+.chip.wrong{border-color:var(--crimson);color:var(--crimson)}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.bin{background:var(--panel);border:2px dashed var(--line);padding:14px;min-height:150px}
+.bin.over{border-color:var(--prism);background:var(--panel-2)}
+.bin h5{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;font-size:13px;margin:0 0 4px;color:var(--prism)}
+.bin .bsub{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);margin-bottom:12px;text-transform:uppercase}
+.bin .drop{display:flex;flex-wrap:wrap;gap:9px}
+.feedback{margin-top:16px;padding:14px;border-left:3px solid var(--prism);background:var(--panel);font-size:15px;display:none}
+.feedback.on{display:block}
+.feedback.good{border-left-color:var(--green)}
+.feedback.bad{border-left-color:var(--crimson)}
+
+/* ---------- scenarios ---------- */
+.scen-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.scen-pick .card .nm{font-size:19px}
+.node{background:var(--panel);border:1px solid var(--line);padding:22px;margin-top:18px}
+.node .stage{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.node p.text{font-size:16px;margin:12px 0 20px}
+.choices{display:grid;gap:10px}
+.choice{text-align:left;background:var(--panel-2);border:1px solid var(--line);color:var(--bone);padding:14px 16px;cursor:pointer;font-family:var(--body);font-size:15px;line-height:1.45}
+.choice:hover{border-color:var(--prism)}
+.outcome{border-left:4px solid var(--amber);padding:18px;background:var(--panel-2);margin-top:16px}
+.outcome .verdict{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;font-size:15px;margin-bottom:8px;color:var(--amber)}
+.outcome.win{border-left-color:var(--green)}
+.outcome.win .verdict{color:var(--green)}
+.outcome.loss{border-left-color:var(--crimson)}
+.outcome.loss .verdict{color:var(--crimson)}
+.trail{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:14px;letter-spacing:.06em}
+
+/* ---------- quiz ---------- */
+.qhead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:18px}
+.qhead .n{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+.qtext{font-size:19px;line-height:1.4;margin:0 0 18px}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;background:var(--panel);border:1px solid var(--line);color:var(--bone);padding:14px 16px;cursor:pointer;font-family:var(--body);font-size:15px;display:flex;gap:12px;align-items:flex-start}
+.opt:hover:not(:disabled){border-color:var(--prism)}
+.opt .ltr{font-family:var(--mono);font-size:12px;color:var(--muted);flex:0 0 auto;padding-top:2px}
+.opt.correct{border-color:var(--green);background:rgba(79,191,139,.09)}
+.opt.chosen-wrong{border-color:var(--crimson);background:rgba(200,40,60,.09)}
+.opt:disabled{cursor:default;opacity:.75}
+.opt.correct:disabled,.opt.chosen-wrong:disabled{opacity:1}
+.rationale{margin-top:14px;padding:16px;background:var(--panel-2);border-left:3px solid var(--muted);display:none}
+.rationale.on{display:block}
+.rationale .tag{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;font-size:13px;margin-bottom:8px}
+.rationale.right{border-left-color:var(--green)}
+.rationale.right .tag{color:var(--green)}
+.rationale.wrong{border-left-color:var(--crimson)}
+.rationale.wrong .tag{color:var(--crimson)}
+.rationale .why{font-size:15px;margin-bottom:10px}
+.rationale .miss{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.rationale .miss b{color:var(--bone);font-weight:600}
+.stamp{display:inline-block;border:3px solid var(--green);color:var(--green);font-family:var(--display);text-transform:uppercase;letter-spacing:.2em;font-size:22px;padding:8px 18px;transform:rotate(-6deg);margin:10px 0}
+.stamp.fail{border-color:var(--crimson);color:var(--crimson)}
+.scorewrap{text-align:center;padding:30px 10px}
+.bigscore{font-family:var(--display);font-size:64px;line-height:1;font-weight:700}
+
+/* ---------- records ---------- */
+table.rec{width:100%;border-collapse:collapse;font-size:14px}
+table.rec th{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.rec td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.rec tr:hover td{background:var(--panel)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--panel);border:1px solid var(--line);padding:14px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--display);font-size:30px;line-height:1.1;margin-top:4px}
+.qbars{display:grid;gap:8px}
+.qbar{display:grid;grid-template-columns:1fr 68px;gap:12px;align-items:center;font-size:13px}
+.qbar .track{height:20px;background:var(--panel-2);position:relative}
+.qbar .track i{position:absolute;inset:0 auto 0 0}
+.qbar .track span{position:absolute;left:8px;top:0;line-height:20px;font-size:12px;color:var(--bone)}
+.qbar .pct{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px}
+textarea.csv{width:100%;height:170px;background:var(--panel-2);border:1px solid var(--line);color:var(--bone);font-family:var(--mono);font-size:11px;padding:12px;display:none}
+textarea.csv.on{display:block}
+.note{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;letter-spacing:.04em}
+label.check{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+footer.src{margin-top:60px;border-top:1px solid var(--line);padding-top:18px}
+
+.resume{display:none;border:1px solid var(--prism);border-left-width:4px;background:var(--panel);padding:14px 16px;margin:-8px 0 26px;align-items:center;gap:14px;flex-wrap:wrap}
+.resume.on{display:flex}
+.resume .t{flex:1;min-width:230px;font-size:15px}
+.resume .t b{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:13px;display:block;color:var(--prism);margin-bottom:4px}
+#savedAt{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);white-space:nowrap}
+.resumebar{border:1px dashed var(--prism);background:var(--panel-2);padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+@media (max-width:640px){
+  .cols{grid-template-columns:1fr}
+  .dossiers{grid-template-columns:1fr}
+  h1.title .tagbox{display:block;width:max-content;margin:0 0 8px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <div class="filetag">
+    <svg class="trio" viewBox="0 0 100 92" aria-hidden="true"><path d="M50 11 L89 79 L11 79 Z" stroke-width="16" stroke-linejoin="round"/></svg>
+    <span>Specialized GSOC</span>
+    <span>Module <b id="mcode"></b></span>
+    <span id="mtag"></span>
+    <span id="mest"></span>
+  </div>
+  <h1 class="title" id="mtitle"></h1>
+  <p class="dek" id="mdek"></p>
+  <p class="srcline" id="msrc"></p>
+</header>
+
+<nav class="tabs" role="tablist" id="tabs"></nav>
+
+<div class="progress">
+  <span>Progress</span>
+  <div class="bar"><i id="pbar"></i></div>
+  <span id="ptext">0%</span>
+  <span id="savedAt"></span>
+</div>
+
+<div class="resume" id="resume"></div>
+
+<section class="view" id="v-brief"></section>
+<section class="view" id="v-ledger"></section>
+<section class="view" id="v-gallery"></section>
+<section class="view" id="v-sort"></section>
+<section class="view" id="v-field"></section>
+<section class="view" id="v-quiz"></section>
+<section class="view" id="v-records"></section>
+
+<footer class="src">
+  <p class="note" id="mfoot"></p>
+</footer>
+</div>
+
+<div class="scrim" id="scrim"><div class="dossier" id="dossier"></div></div>
+<script>
+/* ============================ SPEC ============================ */
+const SPEC = {"id":"d2","code":"GSOC-TRN-D2","caseTag":"Day 2 of 10","est":"45 min","dayBox":"Day 2","title":["The escalation","framework"],"accentLine":1,"dek":"Six levels. Every decision you make on a live console ends up as one of them, and the whole point of today is that you stop looking them up. Levels are not a ladder, and the one that matters most does not wait for anybody. Work through it in any order. It saves itself as you go.","sources":"SOP-GSOC-000 Section A6 · SOP-GSOC-001 · SOP-GSOC-010 · SOP-GSOC-011 · SOP-GSOC-013","certRef":"<span class=\"sopref\">SOP-GSOC-002</span>","qaRef":"<span class=\"sopref\">SOP-GSOC-015</span>","foot":"Module GSOC-TRN-D2, v0.1 draft, internal and operational. This is a training aid, not a controlled procedure. Where this module and a controlled SOP disagree, the SOP wins, every time. Program values that are not yet ratified appear as [CONFIRM] and are never scored.","brief":{"head":"Six levels, and one of them does not wait","sub":"Six parts, any order, no time limit. The drills are built for recall rather than reading, because on shift you will not have time to look up which level a thing is. Written Assessment A at the end of today is the gate to platform access, and it is mostly this.","control":"An escalation that cannot be completed is itself escalated one level up, without delay. A contact who does not answer is not a discharged obligation. That is a control in Section A6 and it is the single most commonly forgotten line in the framework.","parts":[["Level by level","Eight rows pairing a trigger with who acts and who gets told. One side of each row is hidden until you tap it."],["The file on the levels","Eleven cards. The six levels in detail, and the five ways the framework gets misused in practice."],["Call the level","Twelve events, six files. Put each event on its level. This is the drill that matters most today."],["Field test","Three situations that move between levels while you are working them."],["Assessment","Twelve questions with a written justification for the right answer and for whichever wrong one you picked."],["Records","Every attempt, per-question accuracy, and a CSV for the competency record."]],"anchors":{"head":"Three things to hold before the drills","items":["<b>A life-safety event enters at Level 5 immediately.</b> It notifies downward and upward in parallel. You never delay an emergency escalation to work up through the tiers.","<b>Over-escalation is recoverable. Under-escalation is not.</b> <span class=\"sopref\">SOP-GSOC-011</span> requires that every operator be told at certification that escalating something that turned out to be minor is never held against them.","<b>Unresolved is not a disposition.</b> An alert you cannot classify is a Level 2 for a supervisor determination, not a fourth category you can close."]},"cta":"Start with the levels"},"ledger":{"tab":"Level by level","head":"Level by level","sub":"Each row pairs the trigger with who actions it and who gets notified. One side is hidden and the side alternates, so guess before you tap. Rows you have opened stay open next time you are here.","colA":"Trigger","colB":"Who acts, who gets told","cta":"On to the cards","rows":[{"label":"Level 1 · Monitor and document","a":"An alert has been received and is either non-actionable or still under assessment. Nothing yet warrants anyone else's attention.","b":"Operator actions it. Notification goes to the incident record only. The record is still opened, still timestamped, and the false-alert cause is still written specifically."},{"label":"Level 2 · Supervisor notification","a":"Ambiguity you cannot resolve, an alert surge, procedural doubt, repeat activity at one site, a dispatch that cannot be completed, or a platform outage.","b":"Operator actions it. The Program Supervisor is notified. This is the level that exists so you never have to carry an unresolved decision alone."},{"label":"Level 3 · Direct-to-guard dispatch","a":"A verified actionable event with no immediate threat to any person. Somebody is somewhere they should not be, and nobody is in danger.","b":"Operator actions it. The on-site officer is contacted and briefed, and the Supervisor is notified. Executed per <span class=\"sopref\">SOP-GSOC-010</span>."},{"label":"Level 4 · Client and management","a":"An event that meets the notification threshold in the Program Annex. Also: no officer assigned to a site at all, and a critical degraded-operations impact. <b>[CONFIRM]</b> threshold definition per program.","b":"The Supervisor actions it and the client escalation contact is notified. You raise it, they make the call, and it still gets recorded with the contact reached and the time."},{"label":"Level 5 · Emergency response","a":"A life-safety threat: violence, a weapon, fire, a medical emergency, a crime in progress, a person in distress. Also an officer who has not reported back inside the expected interval.","b":"The operator actions it immediately. Law enforcement or EMS first, then the Supervisor and client in parallel. No approval sought first, no waiting for dispatch to finish, no further verification."},{"label":"Level 6 · Executive notification","a":"A fatality or serious injury, media exposure, a multi-site event, a major service failure, or regulatory contact.","b":"The Program Director actions it. The client executive and Specialized leadership are notified. Your part is recognizing it and raising it, not making the calls."},{"label":"Parallel notification","a":"A life-safety event does not travel up the tiers in sequence. It enters at Level 5 and moves in both directions at once.","b":"Emergency services, Supervisor and client are notified in parallel, using a second operator or a second channel where one is available. Sequential notification on a Level 5 is a finding."},{"label":"An escalation that fails","a":"The contact is unreachable, the channel failed, nobody answered. The obligation did not go anywhere.","b":"It escalates one level up, immediately, with every attempt recorded and timestamped. An unanswered call at 02:14 is a line in the record, not the end of the matter."}]},"gallery":{"tab":"The file","head":"The file on the levels","sub":"Two files. The six levels one at a time, and the five ways the framework gets bent in practice. The bottom of each card is sealed until you ask for it, so try answering it yourself first.","note":"Read all eleven and this section marks complete. The levels themselves are in Section A6 of the manual, and each one has a procedure behind it: 010 for dispatch, 011 for emergency services, 012 for notification discipline, 013 for degraded operations.","cta":"Go to the drill","files":[{"key":"levels","label":"The six levels","items":[{"id":"l1","name":"Level 1","real":"Monitor and document · Operator","teaser":"The level most of your shift lives on, and the one people get sloppy about.","fields":[["Trigger","An alert received that is non-actionable, or still under assessment. Nothing requires anyone else yet."],["Who is notified","The incident record, and nobody else. That is not the same as nobody."],["What is still required","The record opens at acknowledgement with the full minimum data set. The classification is recorded with the reasoning. For a false alert the specific cause goes in, because the false-alert ratio KPI and any detection tuning both depend on it."],["The trap","Treating Level 1 as \"nothing happened\". A site with eleven false alerts has an alert log that gets read, and complacency at a repeatedly-false site is a failure mode QA samples for deliberately."]],"sealedLabel":"what good looks like at Level 1","sealed":"\"Vegetation movement in wind, camera 3 field of view\" is a cause. \"False alarm\" is not. Same for \"authorized after-hours contractor, matches documented pattern for this site, verified against site profile\". A Level 1 record that names the specific cause is what makes the next alert at that site quicker and the tuning possible. <span class=\"sopref\">SOP-GSOC-001</span>."},{"id":"l2","name":"Level 2","real":"Supervisor notification · Operator","teaser":"The pressure valve. Using it is not an admission of anything.","fields":[["Trigger","Ambiguity, an alert surge, procedural doubt, repeat activity at one site, a dispatch that cannot be completed, a platform or console outage, or a classification you cannot resolve."],["Who is notified","The Program Supervisor, who owns escalation quality and supports operator decisions."],["Why it exists","So that an unresolved decision never sits with one person at 3 a.m. Unresolved is a trigger, not a disposition, and the supervisor determination is the designed outcome."],["The trap","Reading a Level 2 as a personal failure and working the problem alone instead. Asking for a second view is explicitly encouraged, is recorded, and is never treated as a deficiency."]],"sealedLabel":"what good looks like at Level 2","sealed":"Raise it while it is running, not after it resolves. On a surge, prioritize by potential life safety first and site criticality second, and tell the Supervisor a surge is in progress as part of handling it. The record shows the level, the recipient, the channel and the time, same as any other escalation."},{"id":"l3","name":"Level 3","real":"Direct-to-guard dispatch · Operator","teaser":"Verified, actionable, nobody in danger. The officer is going in blind and you are not.","fields":[["Trigger","A verified actionable event with no immediate threat to any person. Verification comes first, always."],["Who is notified","The on-site officer from the escalation matrix, and the Supervisor. Executed per <span class=\"sopref\">SOP-GSOC-010</span>."],["What the brief has to carry","Site and precise location within the site, nature of the event, number of subjects, whether a weapon or threat has been observed, direction of travel, and any hazard including animals, vehicles and conditions. In that order."],["The trap","Briefing what you assume instead of what you saw. \"No weapon observed\" and \"no weapon present\" are different statements and the officer has to know which one they are being given."]],"sealedLabel":"what good looks like at Level 3","sealed":"Read-back on the location and the nature of the event, then live observation maintained through the response with updates as subjects move. You are the officer's eyes on the wider scene, and that is the part of the job a camera on its own cannot do. Day 8 spends the afternoon on this call."},{"id":"l4","name":"Level 4","real":"Client and management · Supervisor","teaser":"A client who learns about their own site from someone else is a procedure failure.","fields":[["Trigger","An event meeting the notification threshold bound in the Program Annex. Also a site with no officer assigned at all, and a critical degraded-operations impact. <b>[CONFIRM]</b> the threshold for this program."],["Who actions it","The Supervisor, to the client escalation contact. Your job is to recognize the threshold and raise it."],["What the notification says","What is known, what is not yet known, what the GSOC has done, and what happens next. Never cause, never liability, never loss value, and never a commitment made on the client's behalf."],["The trap","Delay. Notification time from threshold event is a measured KPI, and a client hearing it from anyone else first is a failure of the procedure however well the incident itself was run."]],"sealedLabel":"what good looks like at Level 4","sealed":"Prefer a duty function over a named individual where the client has a rota, because a named individual who has left is a silent failure and a duty line is not. If the matrix entry is unverified or expired, treat it as no contact and escalate one level up rather than trying an entry you know is stale."},{"id":"l5","name":"Level 5","real":"Emergency response · Operator, immediately","teaser":"The only level with the word immediately written into it.","fields":[["Trigger","A life-safety threat. Violence, a weapon, fire, a medical emergency, a crime in progress, a person in distress. Also an officer who has not reported back inside the expected interval, because officer welfare is a potential life-safety matter."],["Who actions it","You do. Law enforcement or EMS first. Then the Supervisor and the client, in parallel, using a second operator or channel where available."],["What you do not do","Seek supervisor approval first. Wait for dispatch to complete. Wait for further verification. Work up through the tiers."],["The measured part","Time from life-safety classification to emergency services contacted is described in the manual as the most consequential metric in it."]],"sealedLabel":"what good looks like at Level 5","sealed":"Full street address first, then the specific location within the site and the best access point. Nature in plain language with no codes. Subjects in objective terms. Whether a weapon has been observed, stated explicitly even when it has not. Injuries. That you are a remote monitoring operator watching by camera, not a person on scene. A callback number that will be answered for the duration. Then stay on the line and keep feeding updates. <span class=\"sopref\">SOP-GSOC-011</span>."},{"id":"l6","name":"Level 6","real":"Executive notification · Program Director","teaser":"You will rarely action one. You need to recognize one.","fields":[["Trigger","A fatality or serious injury, media exposure, a multi-site event, a major service failure, or regulatory contact."],["Who actions it","The Program Director, notifying the client executive and Specialized leadership."],["Your part","Recognizing it and raising it without delay, then keeping the record to a standard that will survive being read by people who were never on the floor."],["What follows","Every Level 5 and Level 6 event is reviewed by QA at 100 percent, not sampled, and the lessons are folded into the curriculum and circulated anonymized."]],"sealedLabel":"what good looks like at Level 6","sealed":"A law-enforcement response is presumptive grounds for a legal hold, and the hold goes on immediately rather than on formal notice (<span class=\"sopref\">SOP-GSOC-018</span>). If media are visible on camera or on scene, that is a Level 6 trigger in itself, and no one on the floor says anything to anyone about it."}]},{"key":"wrong","label":"Five ways it goes wrong","items":[{"id":"w1","name":"Walking up the tiers","real":"The most dangerous habit on this list","teaser":"Level 2, then 3, then maybe 5. Tidy, sequential, and wrong.","fields":[["What it looks like","A life-safety event worked through the levels in order, because the numbers suggest a sequence and sequences feel professional."],["Why it happens","The framework is drawn as a table with the numbers ascending. Nothing in the layout says a Level 5 can be your first action."],["What it costs","Minutes, on the one metric where minutes are the whole point."],["The rule","Levels are not strictly sequential. A life-safety event enters at Level 5 immediately and notifies downward and upward in parallel."]],"sealedLabel":"how to break the habit","sealed":"Read the levels as six destinations, not six steps. The question is never \"what level am I up to\", it is \"what is the highest level this event has already reached\". Then act at that level and notify in both directions from there."},{"id":"w2","name":"Waiting for approval","real":"Politeness as a failure mode","teaser":"Checking with the Supervisor before calling 911.","fields":[["What it looks like","An operator on an internal line trying to reach a supervisor while the event continues on screen."],["Why it happens","Calling emergency services feels like a big irreversible step, and deference is a trained instinct in most people who come into this work from a supervised environment."],["What it costs","The delay, and nothing else changes. The supervisor was always going to say call."],["The rule","On a verified life-safety threat you contact emergency services without delay. You do not seek supervisor approval first and you do not wait for supervisor availability."]],"sealedLabel":"how to break the habit","sealed":"The asymmetry is written down so you can lean on it: no operator is ever criticized for escalating an event that turned out to be less serious than it appeared, and operators are held accountable for failing to escalate. <span class=\"sopref\">SOP-GSOC-011</span> requires that this be stated to every operator at certification. It is stated in this module twice for the same reason."},{"id":"w3","name":"Treating an unanswered call as done","real":"The quiet one","teaser":"You tried. Twice. Nobody picked up. That is not the end.","fields":[["What it looks like","Two attempts logged, no answer, and the operator moves on to the next alert with the escalation effectively abandoned."],["Why it happens","It feels like the obligation was to attempt, and the attempts are honestly recorded."],["What it costs","A verified event with a response nobody is actually delivering, and a record that looks diligent while the site sits uncovered."],["The rule","An escalation that cannot be completed is itself escalated one level up without delay. Both officer contacts unreachable is a Level 2. No officer assigned at all is a Level 4 for a client decision."]],"sealedLabel":"how to break the habit","sealed":"On no answer, go to the alternate immediately rather than waiting out a second full ring cycle. Log every attempt with its timestamp, including the failures, because the attempt log is what shows the obligation moving. Then raise the level."},{"id":"w4","name":"Parking on unresolved","real":"The fourth category that does not exist","teaser":"Cannot tell what it is, so it gets closed as probably nothing.","fields":[["What it looks like","An alert with an inconclusive view, closed as a false alert because the alternative felt like an overreaction."],["Why it happens","There are only three classifications and none of them says \"unclear\", so unclear gets rounded to the nearest comfortable one."],["What it costs","The one case in fifty where it was real, and a record that shows a classification with no observation supporting it."],["The rule","There are exactly three dispositions: non-actionable false alert, actionable non-life-safety, actionable life-safety. Unresolved is a trigger for Level 2, not a disposition."]],"sealedLabel":"how to break the habit","sealed":"Where neither a live nor a recorded view is available, escalate to Level 2 and do not infer. Where the view is inconclusive and a life-safety outcome is plausible, escalate as if it were life safety. Both of those are controls in <span class=\"sopref\">SOP-GSOC-007</span>, and both exist precisely because the comfortable answer is usually the wrong one."},{"id":"w5","name":"Handling the surge alone","real":"Competence used as cover","teaser":"Four alerts at once and an operator determined to clear them.","fields":[["What it looks like","Nobody told, queue worked as fast as possible, records thinned out to keep up, and the whole thing invisible until QA reads it."],["Why it happens","It looks like the professional response, and telling the Supervisor feels like asking for help with your own job."],["What it costs","Prioritization nobody checked, and thin records on exactly the shift that needed good ones."],["The rule","An alert surge is a Level 2. Prioritize by potential life safety first, site criticality second, and notify the Supervisor that a surge is in progress."]],"sealedLabel":"how to break the habit","sealed":"The notification is part of the handling, not an interruption to it. A Supervisor who knows a surge is running can reassign a console, take the client leg of a notification, or make the prioritization call that you should not be making alone while four things are live."}]}]},"sort":{"tab":"Call the level","head":"Call the level","sub":"Twelve events, six levels. Put each event where it belongs. Drag them, or tap an event and then tap the level. This is the drill the written assessment is built on, so it is worth running more than once.","cta":"Skip ahead to the field test","win":"Twelve for twelve. Notice where the operator stops being the one who actions it: Level 4 is the Supervisor, Level 6 is the Director, and Level 5 comes straight back to you. That shape is the thing to remember.","bins":[{"key":"l1","label":"Level 1","sub":"Monitor and document"},{"key":"l2","label":"Level 2","sub":"Supervisor"},{"key":"l3","label":"Level 3","sub":"Guard dispatch"},{"key":"l4","label":"Level 4","sub":"Client and management"},{"key":"l5","label":"Level 5","sub":"Emergency response"},{"key":"l6","label":"Level 6","sub":"Executive"}],"items":[{"name":"Alert in, still under assessment","bin":"l1","why":"Level 1. Received, not yet classified, nobody else needs it yet. The record is still open and timestamped."},{"name":"Vegetation in wind, confirmed on two cameras","bin":"l1","why":"Level 1. Non-actionable, logged and closed with the specific cause written in, not \"false alarm\"."},{"name":"Four alerts in two minutes across three sites","bin":"l2","why":"Level 2. A surge. Prioritize life safety first, criticality second, and tell the Supervisor while it is running."},{"name":"View is inconclusive and you cannot classify it","bin":"l2","why":"Level 2. Unresolved is a trigger, not a disposition. A supervisor determination is the designed outcome."},{"name":"Both officer numbers ring out","bin":"l2","why":"Level 2, immediately, with every attempt timestamped. A dispatch that cannot be completed escalates one level up."},{"name":"Verified trespasser in a yard, nobody at risk","bin":"l3","why":"Level 3. Verified, actionable, no threat to any person. Dispatch the officer and brief them properly."},{"name":"No officer is assigned to the site at all","bin":"l4","why":"Level 4. There is nobody to dispatch, so the client makes the call on response. 010."},{"name":"Event meets the annex notification threshold","bin":"l4","why":"Level 4, actioned by the Supervisor to the client escalation contact. You recognize the threshold and raise it."},{"name":"Smoke visible from the loading dock","bin":"l5","why":"Level 5, immediately. Fire is life safety. Emergency services first, Supervisor and client in parallel."},{"name":"Officer has not reported back inside the interval","bin":"l5","why":"Level 5. Attempt contact, and on no response treat officer welfare as a potential life-safety matter. 010."},{"name":"A news van pulls up at the gate","bin":"l6","why":"Level 6. Media exposure is an executive notification, actioned by the Program Director. Nobody on the floor says anything to anyone."},{"name":"Serious injury on scene, ambulance transporting","bin":"l6","why":"Level 6 as well as the Level 5 that got them there. Fatality or serious injury goes to the Program Director, and the evidence goes under legal hold."}]},"field":{"tab":"Field test","head":"Field test","sub":"Three events that move while you are working them. Pick the line you would actually take. Every ending explains why it landed where it did, including the ones where escalating turned out to be unnecessary.","scenarios":[{"id":"f1","line":"A6 · 001 · 011","title":"It starts at Level 1","setup":"A motion alert at a distribution yard, 02:12. Nothing obvious on the first camera. You have the record open and the clock is running.","start":"n1","nodes":{"n1":{"text":"Second camera shows two subjects near the equipment row. No tools visible, no vehicle, no weapon visible. One of them is carrying something long.","choices":[{"t":"Classify actionable non-life-safety and dispatch the officer at Level 3.","to":"n2a"},{"t":"Classify it life-safety on the strength of the long object and call 911.","to":"n2b"},{"t":"Review across the other cameras first to establish the full sequence and what the object is.","to":"n2c"}]},"n2a":{"text":"Officer briefed and moving. Ninety seconds later one subject swings the long object at the other and the second subject goes down.","choices":[{"t":"Emergency services now, and notify Supervisor and client in parallel while the officer is still en route.","to":"win1"},{"t":"Redirect the officer first, since they are closest, then call it in.","to":"mid1"}]},"n2b":{"text":"You are on with the dispatcher. They ask what the weapon is. From this view you cannot say, and you tell them so.","choices":[{"t":"State plainly that an elongated object is visible and not identifiable, and that you are watching live.","to":"win2"},{"t":"Describe it as a weapon so they treat it seriously.","to":"loss1"}]},"n2c":{"text":"Third camera resolves it: the object is a length of conduit and both subjects are moving toward the fence line, away from the assets. Nothing suggests a threat to anyone.","choices":[{"t":"Level 3 dispatch with the object described as observed, and keep watching.","to":"win3"},{"t":"Close it as non-actionable. They are leaving anyway.","to":"loss2"}]},"win1":{"end":true,"win":true,"verdict":"Held the standard","text":"Emergency services engaged inside twenty seconds of the classification changing, Supervisor and client notified in parallel, officer updated and told what they are walking into. EMS arrives to a scene the responders understood before they got out of the vehicle.","why":"This is the shape the framework is built for. The event entered at Level 3 honestly and became a Level 5 the instant it became life safety, and the Level 5 did not wait for the Level 3 to finish. Parallel notification is not a nicety, it is what keeps the Supervisor and the client from finding out afterward."},"win2":{"end":true,"win":true,"verdict":"Held the standard","text":"The dispatcher gets an honest answer: elongated object, roughly a metre, not identifiable from the available view, subjects still on site, remote operator observing live. Units respond appropriately and you keep feeding movement updates until they arrive.","why":"Verify facts, not assumptions. You may record that a subject is carrying an object and describe it. You may not record that it is a weapon unless it is clearly identifiable as one, because that distinction determines what responders expect to encounter. Escalating on a plausible life-safety outcome was correct even though the object turned out to be conduit."},"win3":{"end":true,"win":true,"verdict":"Held the standard","text":"Officer dispatched with an accurate brief including the object described as conduit and the direction of travel. Subjects leave over the fence before arrival, the officer confirms no loss, and the record carries the multi-camera sequence that supports every line of it.","why":"Reviewing across cameras before classifying is the verification sequence working as written. It cost you forty seconds and it gave the officer a brief that matched reality. Note that the dispatch was still correct: verified unauthorized presence is actionable whether or not they are on their way out."},"mid1":{"end":true,"win":false,"verdict":"Partial","text":"You redirect the officer, who arrives to an injured person and starts first aid. You call 911 about a minute later than you could have. Everyone survives the night and the record shows the gap.","why":"Redirecting the officer was not wrong, doing it first was. An officer is never the sole response to a verified life-safety situation, and emergency services are engaged in parallel rather than after the officer reports back. Time from life-safety classification to emergency services contacted is the most consequential metric in the manual and it is measured off exactly this."},"loss1":{"end":true,"win":false,"verdict":"Setback","text":"Responders arrive expecting an armed subject. The approach is tactical, the subject with the conduit does not comply quickly, and it nearly goes badly wrong for someone who was stealing copper.","why":"Characterizing an unidentified object as a weapon changed what the responders were told and therefore what they prepared for. The standard is not pedantry: it determines what emergency services are told and what a responding officer expects to encounter. Escalate on plausibility, describe on observation."},"loss2":{"end":true,"win":false,"verdict":"Setback","text":"They come back forty minutes later with a vehicle. The second entry is caught by a different operator with no context, because your record says non-actionable and names no cause worth reading.","why":"Verified unauthorized presence is actionable whether or not the subjects are leaving. Closing it as non-actionable also removed the pattern: the next operator had no documented reason to treat the site as a watch site, and repeat activity at one site is itself a Level 2 trigger nobody got to apply."}}},{"id":"f2","line":"A6 · 010 · 012","title":"Nobody is picking up","setup":"Verified actionable event at a retail site, 23:48. Unauthorized subject at the rear service door, no threat to any person, clearly on camera. You go to dispatch the officer.","start":"n1","nodes":{"n1":{"text":"Primary officer number rings out. The matrix has an alternate, and it also shows the primary entry was last verified four months ago.","choices":[{"t":"Try the primary again properly. It may have been a bad connection.","to":"n2a"},{"t":"Go to the alternate immediately, and log the failed attempt with its time.","to":"n2b"}]},"n2a":{"text":"Second attempt on the primary, another full ring cycle, nothing. Two and a half minutes are gone and the subject is still working the door.","choices":[{"t":"Alternate now, then escalate if that fails too.","to":"n2b"},{"t":"Level 2 now, and let the Supervisor decide the response.","to":"mid1"}]},"n2b":{"text":"The alternate answers, and says he is covering a different site tonight and is not the officer for this one.","choices":[{"t":"Record what he said verbatim and escalate to Level 2.","to":"win1"},{"t":"Ask him to attend anyway, since he is the only one answering.","to":"mid2"}]},"win1":{"end":true,"win":true,"verdict":"Held the standard","text":"Level 2 raised at 23:53 with every attempt timestamped and the alternate's statement recorded in his words. The Supervisor reaches the client duty line, response is arranged, and the stale matrix entry goes to the Program Supervisor for verification. The subject leaves before entry.","why":"A dispatch that cannot be completed escalates one level up without delay, and an unanswered call is not a discharged obligation. The verbatim record matters too: an officer declining or being unable to respond is recorded in their words, because paraphrase invites argument later. The stale entry is the real finding, and matrix verification currency is a measured KPI in <span class=\"sopref\">SOP-GSOC-003</span>."},"mid1":{"end":true,"win":false,"verdict":"Partial","text":"The Supervisor picks it up and works the contact problem while you keep watching. Response arrives late. The record shows two full ring cycles on a number that had not been verified in four months.","why":"Escalating was right. The lost time was avoidable: on no answer you attempt the alternate immediately rather than waiting out a second full ring cycle. The instruction is that specific because ring cycles are where these minutes go."},"mid2":{"end":true,"win":false,"verdict":"Partial","text":"He agrees to swing by, leaves the site he is actually posted at, and arrives twenty minutes later. Two clients are now covered worse than they were, and nobody with the authority to make that trade was asked.","why":"Officer assignment and posting are not the operator's to rearrange, and pulling an officer off another site is a decision with a second client attached to it. No officer assigned to a site is a Level 4 for a client decision on response, precisely so this trade gets made by someone who can see both sides of it."}}},{"id":"f3","line":"A6 · 007 · 017","title":"The one that turns out to be nothing","setup":"03:05. A single camera at a corporate campus shows someone lying on the ground near the side entrance, not moving. The image is poor and the angle is bad. No other camera covers that spot.","start":"n1","nodes":{"n1":{"text":"You cannot tell whether the person is unconscious, asleep, or not a person at all. Recorded review shows them arriving on foot four minutes ago and going down without obvious cause.","choices":[{"t":"Treat it as life safety. EMS now, Supervisor and client in parallel.","to":"n2a"},{"t":"Dispatch the officer to look, and hold on EMS until they report.","to":"n2b"},{"t":"Keep watching for a few minutes to see if they get up.","to":"loss1"}]},"n2a":{"text":"EMS is on the way. Six minutes later the officer reaches the spot and the person sits up, unsteady but conscious, and says they are fine and had too much to drink.","choices":[{"t":"Let EMS continue and record the full sequence including the classification and why.","to":"win1"},{"t":"Cancel EMS to avoid a wasted response, and note it as a false alarm.","to":"mid1"}]},"n2b":{"text":"The officer is eleven minutes out. You are watching a motionless person and holding an emergency escalation behind a guard response.","choices":[{"t":"Stop holding. EMS now, and keep the officer coming.","to":"win2"},{"t":"Wait for the officer, they are closest to the truth.","to":"loss2"}]},"win1":{"end":true,"win":true,"verdict":"Held the standard","text":"EMS assesses and clears them. The record carries the inconclusive view, the plausible life-safety outcome, the classification, the parallel notifications and the outcome. QA reviews it as a Level 5, as it reviews every Level 5, and the finding is that it was handled correctly.","why":"This is the outcome the training deliberately includes: an escalation that turned out to be unnecessary, reinforced as the correct call. <span class=\"sopref\">SOP-GSOC-017</span> requires scenarios like this in every set. Over-escalation is recoverable. A person who actually was unconscious and got eleven more minutes on the ground is not."},"win2":{"end":true,"win":true,"verdict":"Held the standard","text":"EMS called at 03:09, officer still en route, both arrive within a couple of minutes of each other. The person is intoxicated rather than injured. Nobody criticizes the call, and the record shows you stopped holding as soon as you recognized what you were doing.","why":"Emergency escalation runs in parallel with dispatch, never after it. Recognizing mid-decision that you are holding a Level 5 behind a Level 3 and correcting it is exactly the judgment the module is trying to build. The correction is worth as much as getting it right first time."},"mid1":{"end":true,"win":false,"verdict":"Partial","text":"You cancel EMS. The officer is not a clinician, the person declines further help, and they walk off. If there had been a head injury under that, the decision to cancel would be yours and it would be in the record.","why":"Standing an emergency response down on the strength of a conscious person saying they are fine is a clinical judgment, and it is not the operator's to make. Remain on the line as long as the dispatcher requires and let responders decide. The instinct to avoid a wasted response is the exact instinct the asymmetry is written to override."},"loss1":{"end":true,"win":false,"verdict":"Setback","text":"You watch for six minutes. They do not move. By the time you escalate, the delay is the first thing in the timeline anyone reads, and the record has to explain why a motionless person was observed and not reported.","why":"Where the view is inconclusive and a life-safety outcome is plausible, you escalate as if it were a life-safety event. Waiting to be sure is the definition of under-escalation, and it is the one direction the manual holds operators accountable for."},"loss2":{"end":true,"win":false,"verdict":"Setback","text":"Eleven minutes pass. The officer arrives and calls it in himself. Your record shows a life-safety-plausible event held behind a guard dispatch for the whole of it.","why":"An officer is never the sole response to a plausible life-safety situation. You do not wait for the outcome of dispatch before engaging emergency services, and you do not wait for further verification. The officer being closest to the truth is not a reason to be slower to the call."}}}]},"quiz":{"pass":10,"passMsg":"Ten or better means the framework is where it needs to be for the written assessment. If you missed any of the parallel-notification questions, run the level drill again before the gate.","failMsg":"Under ten. The level drill is the fastest fix, then the five cards on how the framework goes wrong. Written Assessment A is mostly this material, so it is worth the second pass.","items":[{"q":"A life-safety event arrives. Where does it enter the framework?","opts":[{"t":"At Level 5 immediately, notifying downward and upward in parallel.","ok":true,"why":"Levels are not strictly sequential. The operator never delays an emergency escalation to work up through the tiers, and the Supervisor and client legs run in parallel rather than after."},{"t":"At Level 2, so the Supervisor can authorize the emergency call.","ok":false,"why":"No approval is sought first. The operator contacts emergency services without delay and does not wait for supervisor availability."},{"t":"At Level 3, because dispatch is always the first physical response.","ok":false,"why":"An officer is never the sole response to a verified life-safety situation. Dispatch and emergency services run in parallel."},{"t":"At Level 6, since a serious event is an executive matter.","ok":false,"why":"Level 6 is the Program Director's and is triggered by outcomes like fatality, serious injury or media exposure. The immediate emergency escalation is yours at Level 5."}]},{"q":"You call the officer's primary number and it rings out. What is the immediate next action?","opts":[{"t":"Attempt the alternate immediately, without waiting out a second full ring cycle on the primary.","ok":true,"why":"010 is specific about this because that is where the minutes go. Every attempt, successful or not, is logged with its timestamp."},{"t":"Try the primary again, in case the connection was bad.","ok":false,"why":"That is the instruction the procedure explicitly rules out. Go to the alternate first, and escalate if both fail."},{"t":"Escalate straight to Level 5, since dispatch has failed.","ok":false,"why":"Both contacts unreachable is a Level 2. Level 5 comes in if officer welfare becomes the concern, such as no report-back inside the expected interval."},{"t":"Close the dispatch as unavailable and note it in the passdown.","ok":false,"why":"An escalation that cannot be completed escalates one level up without delay. A passdown note is not an escalation."}]},{"q":"Which of these is a Level 2?","opts":[{"t":"An alert surge, procedural doubt, repeat activity at one site, or a classification you cannot resolve.","ok":true,"why":"All four are named triggers. Level 2 exists so that an unresolved decision never sits with one operator alone, and using it is never treated as a deficiency."},{"t":"Any event where an officer is dispatched.","ok":false,"why":"That is Level 3. The Supervisor is notified as part of it, which is not the same as the event being a Level 2."},{"t":"Any event the client would want to know about.","ok":false,"why":"That is Level 4, actioned by the Supervisor against the notification threshold bound in the annex."},{"t":"Only a platform outage.","ok":false,"why":"An outage is one trigger among several, and it is also a trigger for degraded operations under 013."}]},{"q":"An event meets the client notification threshold in the annex. Who makes that call?","opts":[{"t":"The Program Supervisor, to the client escalation contact. You recognize the threshold and raise it.","ok":true,"why":"Level 4 is actioned by the Supervisor. The notification still gets recorded with the contact reached and the time, and notification time from threshold event is a measured KPI."},{"t":"The operator, since they have the detail fresh.","ok":false,"why":"Client notification at Level 4 is not an operator action. Your part is recognizing the threshold and escalating without delay."},{"t":"The Program Director, because it involves the client relationship.","ok":false,"why":"The Director owns the relationship and Level 6. Routine threshold notification is the Supervisor's."},{"t":"Nobody, until the incident is closed and the facts are settled.","ok":false,"why":"Delay is the failure mode here. A client who learns about their own site from anyone else first is a failure of the procedure however well the incident was handled."}]},{"q":"You cannot classify an alert from the available view. What is that?","opts":[{"t":"A trigger for a Level 2 supervisor determination, not a disposition you can close.","ok":true,"why":"There are exactly three dispositions: non-actionable, actionable non-life-safety, actionable life-safety. Unresolved is a trigger. Where no view is available at all, escalate and do not infer."},{"t":"A fourth classification, recorded as unresolved and closed.","ok":false,"why":"There is no fourth category. Recording one is how a real event gets closed as probably nothing."},{"t":"A false alert, since nothing could be confirmed.","ok":false,"why":"A false alert requires a specific identified cause. Absence of confirmation is not a cause."},{"t":"An automatic Level 5.","ok":false,"why":"Only where a life-safety outcome is plausible. Otherwise it is a Level 2 for a determination."}]},{"q":"Why is the escalation asymmetry written into the manual explicitly?","opts":[{"t":"So operators can lean on it: escalating something minor is never criticized, failing to escalate is.","ok":true,"why":"011 requires that this be stated to every operator at certification. The asymmetry is deliberate, and it exists because hesitation is the predictable failure and it is the expensive one."},{"t":"To discourage unnecessary escalations that waste emergency services time.","ok":false,"why":"The opposite. The threshold is deliberately low, and scenarios where escalation turns out unnecessary are included in training and reinforced as correct."},{"t":"To protect the Supervisor from being called at night.","ok":false,"why":"Level 2 exists to be used. Nothing in the framework is designed around not disturbing people."},{"t":"Because most escalations turn out to be false and the manual manages expectations.","ok":false,"why":"The false-alert ratio is tracked for tuning, not as a reason to escalate less. The asymmetry is about consequence, not frequency."}]},{"q":"A dispatched officer has not reported back inside the expected interval. What level?","opts":[{"t":"Attempt contact, and on no response treat officer welfare as a potential life-safety matter at Level 5.","ok":true,"why":"010 says exactly that. The officer went into a situation you could see and they could not, and silence after that is a life-safety concern rather than an administrative one. [CONFIRM] the report-back interval for this program."},{"t":"Level 2, since it is a dispatch problem.","ok":false,"why":"Both contacts unreachable before dispatch is a Level 2. An officer who went in and then went quiet is a different problem."},{"t":"Level 4, so the client can chase their own officer.","ok":false,"why":"Level 4 is for a client decision on response where no officer is assigned. Officer welfare is not a client notification matter in the first instance."},{"t":"No level. Officers often take a while to call in.","ok":false,"why":"The interval exists so that this is not a judgment call. Past it, you act."}]},{"q":"Media arrive at a monitored site during an incident. What happens?","opts":[{"t":"Level 6. The Program Director actions it, and nobody on the floor says anything to anyone.","ok":true,"why":"Media exposure is a named Level 6 trigger. Separately, 012 puts every external enquiry through the Director with nothing confirmed, including whether an incident occurred."},{"t":"Level 4, since the client needs to know how it looks.","ok":false,"why":"The client will be notified as part of the Director's handling. The trigger itself is Level 6."},{"t":"Nothing, unless a reporter actually calls the floor.","ok":false,"why":"Visible media presence is the trigger. Waiting for the call means the Director finds out last."},{"t":"Level 2, as a Supervisor awareness matter.","ok":false,"why":"The Supervisor will be in the loop, but this is explicitly an executive notification."}]},{"q":"Four alerts land in ninety seconds across three sites. One is potentially life safety.","opts":[{"t":"Prioritize potential life safety first and site criticality second, and notify the Supervisor that a surge is in progress.","ok":true,"why":"That is 001 as written. The notification is part of handling the surge, not an interruption to it, because a Supervisor who knows can reassign a console or take a notification leg."},{"t":"Work them in the order they arrived, so nothing gets lost.","ok":false,"why":"Arrival order is not a priority scheme. Potential life safety comes first regardless of when it landed."},{"t":"Clear the three quick ones first to get the queue down, then work the serious one.","ok":false,"why":"That is the trap. It optimizes the queue and delays the only alert where delay is measured in consequences."},{"t":"Handle all four yourself and report the surge at handover.","ok":false,"why":"A surge is a Level 2 while it is running. Reporting it afterward gives up every option the Supervisor had."}]},{"q":"Which statement about Level 1 is right?","opts":[{"t":"The record still opens at acknowledgement, and a false alert still needs its specific cause written in.","ok":true,"why":"Level 1 means nobody else is notified, not that nothing is recorded. \"Vegetation movement in wind, camera 3 field of view\" is a cause. \"False alarm\" is not, and the false-alert ratio KPI and detection tuning both depend on the specific version."},{"t":"No record is required, since nothing actionable happened.","ok":false,"why":"Every action is recorded contemporaneously, and an action that is not recorded is treated for audit as an action not taken."},{"t":"A site with a history of false alerts can be closed without verification.","ok":false,"why":"A site with a false-alert history is not exempt from verification, and complacency there is a failure mode QA samples for deliberately."},{"t":"Level 1 events do not enter the QA sampling pool.","ok":false,"why":"Records enter the sampling pool under 015 regardless of level, and sampling deliberately includes high-false-alert sites."}]},{"q":"You escalate to Level 4 and the client contact's matrix entry was last verified nine months ago.","opts":[{"t":"An unverified or expired entry is treated as no contact. Escalate one level up rather than working a stale entry.","ok":true,"why":"That is a control in 003. Operators verify the entries for their assigned sites at shift start, and a verification failure is reported rather than worked around."},{"t":"Try it anyway. A stale number is better than nothing.","ok":false,"why":"The control exists because a named individual who has left is a silent failure. The time spent on a dead entry is the cost."},{"t":"Use the last known good contact from a previous incident record.","ok":false,"why":"The matrix is the source. Reconstructing contacts from old records is how out-of-date information gets recycled into the live process."},{"t":"Note it in the passdown and continue.","ok":false,"why":"Report it, yes. But the escalation in front of you still has to go somewhere, and that is one level up."}]},{"q":"What does parallel notification actually require of you on a Level 5?","opts":[{"t":"Emergency services first, then Supervisor and client notified at the same time, using a second operator or channel where one is available.","ok":true,"why":"Sequential notification on a Level 5 is a finding. Parallel notification compliance is tracked as a KPI in 011 for exactly this reason."},{"t":"Notify everyone in level order: Supervisor, then client, then emergency services.","ok":false,"why":"That is walking up the tiers, on the one event type where it costs the most."},{"t":"Notify emergency services, then wait until the incident is stable before telling anyone internally.","ok":false,"why":"Stability is not the trigger for the internal legs. They run in parallel, which is why a second operator or channel is used where available."},{"t":"Only emergency services. The Supervisor will see it in the incident system.","ok":false,"why":"The incident system of record is not a real-time urgent communication channel, and 012 is explicit that urgency is spoken rather than written."}]}]}};
+const NS = 'gsoc:' + SPEC.id + ':';
+
+/* ============================ STORAGE ============================ */
+const mem = {};
+const store = {
+  async get(k, shared=false){
+    const mk = (shared?'s:':'p:')+k;
+    try{
+      if(window.storage){ const r = await window.storage.get(k, shared); if(r) return JSON.parse(r.value); }
+    }catch(e){}
+    try{
+      const raw = window.localStorage && localStorage.getItem(mk);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return mk in mem ? mem[mk] : null;
+  },
+  async set(k, v, shared=false){
+    const mk = (shared?'s:':'p:')+k;
+    mem[mk] = v;
+    const json = JSON.stringify(v);
+    try{ if(window.storage) await window.storage.set(k, json, shared); }catch(e){}
+    try{ if(window.localStorage) localStorage.setItem(mk, json); }catch(e){}
+  }
+};
+
+let PROFILE = { name:"", share:false };
+let PROGRESS = { visited:[], dossiers:[], sortBest:null, scenarios:[], quizTaken:false,
+  lastTab:null, revealed:[], sortState:null, scenState:null, quizState:null, updatedAt:null };
+let ATTEMPTS = [];
+
+async function loadAll(){
+  const p = await store.get(NS+'profile'); if(p) PROFILE = Object.assign(PROFILE, p);
+  const g = await store.get(NS+'progress'); if(g) PROGRESS = Object.assign(PROGRESS, g);
+  const a = await store.get(NS+'attempts'); if(Array.isArray(a)) ATTEMPTS = a;
+}
+const saveProfile  = () => store.set(NS+'profile', PROFILE);
+const saveAttempts = () => store.set(NS+'attempts', ATTEMPTS);
+function saveProgress(){
+  PROGRESS.updatedAt = new Date().toISOString();
+  paintSaved();
+  return store.set(NS+'progress', PROGRESS);
+}
+function ago(iso){
+  if(!iso) return '';
+  const s = (Date.now() - new Date(iso))/1000;
+  if(s < 90) return 'a moment ago';
+  if(s < 3600) return Math.round(s/60) + ' minutes ago';
+  if(s < 86400) return Math.round(s/3600) + ' hours ago';
+  const d = Math.round(s/86400);
+  return d === 1 ? 'yesterday' : d + ' days ago';
+}
+function paintSaved(){
+  const e = document.getElementById('savedAt');
+  if(e) e.textContent = PROGRESS.updatedAt ? 'Saved ' + ago(PROGRESS.updatedAt) : '';
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function toast(btnId, msg){
+  const b = document.getElementById(btnId); if(!b) return;
+  const old = b.textContent; b.textContent = msg; setTimeout(()=>b.textContent=old, 1400);
+}
+
+/* ============================ SHELL ============================ */
+const TABS = [
+  { id:"brief",   label:"Brief" },
+  { id:"ledger",  label:SPEC.ledger.tab },
+  { id:"gallery", label:SPEC.gallery.tab },
+  { id:"sort",    label:SPEC.sort.tab },
+  { id:"field",   label:SPEC.field.tab },
+  { id:"quiz",    label:"Assessment" },
+  { id:"records", label:"Records" }
+];
+let current = "brief";
+const GAL_TOTAL = SPEC.gallery.files.reduce((n,f)=>n+f.items.length,0);
+
+function tabLabel(id){ const t = TABS.find(x => x.id === id); return t ? t.label : id; }
+
+function buildHead(){
+  document.getElementById('mcode').textContent = SPEC.code;
+  document.getElementById('mtag').textContent = SPEC.caseTag;
+  document.getElementById('mest').textContent = 'Est. ' + SPEC.est;
+  document.getElementById('mtitle').innerHTML =
+    (SPEC.dayBox ? `<span class="tagbox">${SPEC.dayBox}</span>` : '') +
+    SPEC.title.map((t,i) => i === SPEC.accentLine ? `<span class="a">${t}</span>` : t).join('<br>');
+  document.getElementById('mdek').textContent = SPEC.dek;
+  document.getElementById('msrc').innerHTML = 'Source procedures <b>' + SPEC.sources + '</b>';
+  document.getElementById('mfoot').innerHTML = SPEC.foot;
+}
+function buildTabs(){
+  const nav = document.getElementById('tabs');
+  nav.innerHTML = TABS.map(t =>
+    `<button role="tab" data-tab="${t.id}" aria-selected="${t.id===current}">${esc(t.label)}<span class="dot"></span></button>`
+  ).join('');
+  nav.querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.tab));
+}
+function go(id){
+  current = id;
+  document.querySelectorAll('section.view').forEach(s => s.classList.toggle('on', s.id === 'v-'+id));
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===id));
+  if(!PROGRESS.visited.includes(id)) PROGRESS.visited.push(id);
+  PROGRESS.lastTab = id;
+  saveProgress();
+  RENDER[id] && RENDER[id]();
+  paintProgress();
+  window.scrollTo({top:0, behavior:'instant'});
+}
+function completion(){
+  return {
+    brief:   PROGRESS.visited.includes('brief'),
+    ledger:  PROGRESS.revealed.length >= SPEC.ledger.rows.length,
+    gallery: PROGRESS.dossiers.length >= GAL_TOTAL,
+    sort:    PROGRESS.sortBest === SPEC.sort.items.length,
+    field:   PROGRESS.scenarios.length >= SPEC.field.scenarios.length,
+    quiz:    PROGRESS.quizTaken,
+    records: ATTEMPTS.length > 0
+  };
+}
+function paintProgress(){
+  const c = completion();
+  const keys = ['brief','ledger','gallery','sort','field','quiz'];
+  const done = keys.filter(k => c[k]).length;
+  const pct = Math.round(done/keys.length*100);
+  document.getElementById('pbar').style.width = pct+'%';
+  document.getElementById('ptext').textContent = pct+'% complete';
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('done', !!c[b.dataset.tab]));
+}
+function showResume(){
+  const box = document.getElementById('resume');
+  const q = PROGRESS.quizState;
+  const c = completion(), keys = ['brief','ledger','gallery','sort','field','quiz'];
+  const n = keys.filter(k => c[k]).length;
+  box.innerHTML = `<div class="t"><b>Welcome back${PROFILE.name ? ', ' + esc(PROFILE.name) : ''}</b>
+      You stopped in ${esc(tabLabel(PROGRESS.lastTab))} ${ago(PROGRESS.updatedAt)}. ${n} of 6 sections done${q ? `, and an assessment is sitting open at question ${q.qi + 1}` : ''}. Nothing was lost.</div>
+    ${q ? `<button class="btn" id="resQuiz">Resume the assessment</button>` : ''}
+    <button class="btn ghost" id="resDismiss">Keep going</button>`;
+  box.classList.add('on');
+  box.querySelector('#resDismiss').onclick = () => box.classList.remove('on');
+  if(q) box.querySelector('#resQuiz').onclick = () => { box.classList.remove('on'); go('quiz'); resumeQuiz(); };
+}
+
+/* ============================ VIEW: BRIEF ============================ */
+const RENDER = {};
+RENDER.brief = function(){
+  const el = document.getElementById('v-brief');
+  if(el.dataset.built) return;
+  el.dataset.built = 1;
+  el.innerHTML = `
+    <span class="eyebrow">Start here</span>
+    <h2>${esc(SPEC.brief.head)}</h2>
+    <p class="sub">${SPEC.brief.sub}</p>
+
+    ${SPEC.brief.control ? `<div class="ctrl"><span class="lab">Control</span><p>${SPEC.brief.control}</p></div>` : ''}
+
+    <div class="panel" style="margin-bottom:26px">
+      <div class="hint" style="margin-bottom:10px">Sign in for the competency record</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="nameIn" placeholder="Your name or employee ID" value="${esc(PROFILE.name)}" style="flex:1">
+        <button class="btn" id="nameSave">Save name</button>
+      </div>
+      <label class="check" style="margin-top:14px">
+        <input type="checkbox" id="shareIn" ${PROFILE.share?'checked':''}>
+        Add my result to the shared cohort roster
+      </label>
+      <p class="note" style="margin:8px 0 0">Off by default. Your scores stay on this device either way. Turn it on and your name, score, and date also go to a roster the Training Lead and everyone else in the cohort can read. Nothing here is the competency record of ${SPEC.certRef} on its own. The Training Lead records that separately.</p>
+    </div>
+
+    <h3>The parts</h3>
+    <div class="ledger">
+      ${SPEC.brief.parts.map(([k,v]) => `<div class="row"><div class="label">${esc(k)}</div><div style="font-size:15px">${v}</div></div>`).join('')}
+    </div>
+
+    ${SPEC.brief.anchors ? `
+      <h3>${esc(SPEC.brief.anchors.head)}</h3>
+      <div class="panel">
+        <ol style="margin:0;padding-left:20px">
+          ${SPEC.brief.anchors.items.map(t => `<li style="margin-bottom:10px">${t}</li>`).join('')}
+        </ol>
+      </div>` : ''}
+
+    <div style="margin-top:28px"><button class="btn" id="goLedger">${esc(SPEC.brief.cta)}</button></div>
+  `;
+  document.getElementById('nameSave').onclick = () => {
+    PROFILE.name = document.getElementById('nameIn').value.trim();
+    saveProfile(); toast('nameSave','Saved');
+  };
+  document.getElementById('shareIn').onchange = e => { PROFILE.share = e.target.checked; saveProfile(); };
+  document.getElementById('goLedger').onclick = () => go('ledger');
+};
+
+/* ============================ VIEW: LEDGER ============================ */
+RENDER.ledger = function(){
+  const L = SPEC.ledger;
+  const el = document.getElementById('v-ledger');
+  el.innerHTML = `
+    <span class="eyebrow">Part one</span>
+    <h2>${esc(L.head)}</h2>
+    <p class="sub">${L.sub}</p>
+    <div class="ledger">
+      ${L.rows.map((r,i) => {
+        const hideB = i % 2 === 0;
+        const A = `<div class="cell"><span class="who">${esc(L.colA)}</span><span class="txt">${r.a}</span></div>`;
+        const B = `<div class="cell b${L.negB?' neg':''}"><span class="who">${esc(L.colB)}</span><span class="txt">${r.b}</span></div>`;
+        const hidden = () => `<div class="cell${hideB?(' b'+(L.negB?' neg':'')):''} reveal" data-rev="${i}"><span class="who">${esc(hideB?L.colB:L.colA)}</span><span class="txt masked">${hideB?r.b:r.a}</span></div>`;
+        return `<div class="row"><div class="label">${esc(r.label)}</div><div class="cols">
+          ${hideB ? A + hidden() : hidden() + B}
+        </div></div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:26px"><button class="btn" id="toGallery">${esc(L.cta)}</button></div>
+  `;
+  el.querySelectorAll('[data-rev]').forEach(d => {
+    const idx = +d.dataset.rev;
+    const open = () => { d.classList.add('open'); const m = d.querySelector('.masked'); if(m) m.classList.remove('masked'); };
+    if(PROGRESS.revealed.includes(idx)) open();
+    d.onclick = () => {
+      open();
+      if(!PROGRESS.revealed.includes(idx)){ PROGRESS.revealed.push(idx); saveProgress(); paintProgress(); }
+    };
+  });
+  el.querySelector('#toGallery').onclick = () => go('gallery');
+};
+
+/* ============================ VIEW: GALLERY ============================ */
+let galFile = 0;
+RENDER.gallery = function(){
+  const G = SPEC.gallery;
+  const f = G.files[galFile];
+  const alt = galFile === 1;
+  const el = document.getElementById('v-gallery');
+  el.innerHTML = `
+    <span class="eyebrow${alt?' alt':''}">Part two</span>
+    <h2>${esc(G.head)}</h2>
+    <p class="sub">${G.sub}</p>
+    <div class="side-switch">
+      ${G.files.map((x,i) => `<button class="${i===galFile?('on'+(i===1?' alt':'')):''}" data-file="${i}">${esc(x.label)}</button>`).join('')}
+    </div>
+    <div class="dossiers">
+      ${f.items.map((v,i) => `
+        <div class="card ${alt?'alt':''} ${PROGRESS.dossiers.includes(v.id)?'read':''}" data-open="${v.id}">
+          <div class="no">${String(i+1).padStart(2,'0')} / ${String(f.items.length).padStart(2,'0')}</div>
+          <div class="nm">${esc(v.name)}</div>
+          <div class="real">${esc(v.real)}</div>
+          <div class="teaser">${v.teaser}</div>
+          <span class="more">${PROGRESS.dossiers.includes(v.id)?'Reviewed · open again':'Open the card'}</span>
+        </div>`).join('')}
+    </div>
+    <p class="note" style="margin-top:18px">${G.note}</p>
+    <div style="margin-top:24px"><button class="btn" id="toSort">${esc(G.cta)}</button></div>
+  `;
+  el.querySelectorAll('[data-file]').forEach(b => b.onclick = () => { galFile = +b.dataset.file; RENDER.gallery(); });
+  el.querySelectorAll('[data-open]').forEach(c => c.onclick = () => openDossier(c.dataset.open));
+  el.querySelector('#toSort').onclick = () => go('sort');
+};
+
+function findItem(id){
+  for(let i=0;i<SPEC.gallery.files.length;i++){
+    const it = SPEC.gallery.files[i].items.find(x => x.id === id);
+    if(it) return { it, fi:i };
+  }
+  return null;
+}
+function openDossier(id){
+  const found = findItem(id); if(!found) return;
+  const { it:v, fi } = found;
+  const alt = fi === 1;
+  const d = document.getElementById('dossier');
+  d.className = 'dossier' + (alt?' alt':'');
+  d.innerHTML = `
+    <button class="close" aria-label="Close">&times;</button>
+    <span class="eyebrow${alt?' alt':''}">${esc(SPEC.gallery.files[fi].label)}</span>
+    <h4>${esc(v.name)}</h4>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em">${esc(v.real)}</div>
+    <div style="margin-top:18px">
+      ${v.fields.map(([k,t]) => `<div class="field"><div class="k">${esc(k)}</div><div class="v">${t}</div></div>`).join('')}
+    </div>
+    <div class="flap" id="flap">
+      <div class="k">Sealed · ${esc(v.sealedLabel)} &nbsp;›&nbsp; tap to unseal</div>
+      <div class="body">${v.sealed}</div>
+    </div>
+  `;
+  document.getElementById('scrim').classList.add('on');
+  document.body.style.overflow = 'hidden';
+  d.querySelector('.close').onclick = closeDossier;
+  const flap = document.getElementById('flap');
+  flap.onclick = () => {
+    flap.classList.add('open');
+    flap.querySelector('.k').textContent = 'Unsealed · ' + v.sealedLabel;
+    if(!PROGRESS.dossiers.includes(v.id)){ PROGRESS.dossiers.push(v.id); saveProgress(); paintProgress(); }
+  };
+}
+function closeDossier(){
+  document.getElementById('scrim').classList.remove('on');
+  document.body.style.overflow = '';
+  RENDER.gallery();
+}
+document.getElementById('scrim').onclick = e => { if(e.target.id === 'scrim') closeDossier(); };
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.getElementById('scrim').classList.contains('on')) closeDossier(); });
+
+/* ============================ VIEW: SORT ============================ */
+let picked = null;
+RENDER.sort = function(){
+  const S = SPEC.sort;
+  const el = document.getElementById('v-sort');
+  picked = null;
+  if(!PROGRESS.sortState){
+    const order = S.items.map((_,i)=>i).sort(()=>Math.random()-0.5);
+    const place = {}; order.forEach(i => place[i] = 'pool');
+    PROGRESS.sortState = { order, place };
+    saveProgress();
+  }
+  const st = PROGRESS.sortState;
+  const chipHtml = i => `<div class="chip" draggable="true" data-i="${i}">${esc(S.items[i].name)}</div>`;
+  const zoneHtml = z => st.order.filter(i => st.place[i] === z).map(chipHtml).join('');
+  el.innerHTML = `
+    <span class="eyebrow">Part three</span>
+    <h2>${esc(S.head)}</h2>
+    <p class="sub">${S.sub}</p>
+    <div class="dnd-pool" id="pool">${zoneHtml('pool')}</div>
+    <div class="bins">
+      ${S.bins.map(b => `<div class="bin" data-bin="${b.key}"><h5>${esc(b.label)}</h5><div class="bsub">${esc(b.sub||'')}</div><div class="drop">${zoneHtml(b.key)}</div></div>`).join('')}
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="checkSort">Check it</button>
+      <button class="btn ghost" id="resetSort">Start over</button>
+    </div>
+    <div class="feedback" id="sortFb"></div>
+    <div style="margin-top:26px"><button class="btn ghost" id="toField">${esc(S.cta)}</button></div>
+  `;
+
+  const pool = el.querySelector('#pool');
+  const chips = () => el.querySelectorAll('.chip');
+  const zones = [pool, ...el.querySelectorAll('.bin .drop')];
+
+  function wire(){
+    chips().forEach(c => {
+      c.ondragstart = e => { e.dataTransfer.setData('text/plain', c.dataset.i); e.dataTransfer.effectAllowed='move'; };
+      c.onclick = () => {
+        if(picked === c){ c.classList.remove('picked'); picked = null; return; }
+        chips().forEach(x=>x.classList.remove('picked'));
+        c.classList.add('picked'); picked = c;
+      };
+    });
+  }
+  function drop(target, i){
+    const chip = el.querySelector(`.chip[data-i="${i}"]`);
+    if(!chip) return;
+    target.appendChild(chip);
+    chip.classList.remove('picked','right','wrong');
+    picked = null;
+    const bin = target.closest('.bin');
+    st.place[i] = bin ? bin.dataset.bin : 'pool';
+    st.order = [...el.querySelectorAll('.chip')].map(c => +c.dataset.i);
+    saveProgress();
+  }
+  zones.forEach(z => {
+    const host = z.classList.contains('drop') ? z.parentElement : z;
+    z.ondragover = e => { e.preventDefault(); host.classList.add('over'); };
+    z.ondragleave = () => host.classList.remove('over');
+    z.ondrop = e => { e.preventDefault(); host.classList.remove('over'); drop(z, e.dataTransfer.getData('text/plain')); };
+    z.onclick = e => { if(picked && !e.target.classList.contains('chip')) drop(z, picked.dataset.i); };
+  });
+  el.querySelectorAll('.bin').forEach(b => b.onclick = e => {
+    if(picked && !e.target.classList.contains('chip')) drop(b.querySelector('.drop'), picked.dataset.i);
+  });
+
+  el.querySelector('#checkSort').onclick = () => {
+    let right = 0, misses = [];
+    const unplaced = pool.querySelectorAll('.chip').length;
+    el.querySelectorAll('.bin').forEach(bin => {
+      bin.querySelectorAll('.chip').forEach(c => {
+        const it = S.items[+c.dataset.i];
+        const ok = it.bin === bin.dataset.bin;
+        c.classList.toggle('right', ok); c.classList.toggle('wrong', !ok);
+        if(ok) right++; else misses.push(it);
+      });
+    });
+    const total = S.items.length;
+    const fb = el.querySelector('#sortFb');
+    fb.className = 'feedback on ' + (right===total ? 'good' : 'bad');
+    fb.innerHTML = right===total
+      ? `<b style="font-family:var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--green)">${total} for ${total}</b><br>${S.win}`
+      : `<b style="font-family:var(--display);letter-spacing:.1em;text-transform:uppercase">${right} of ${total} placed correctly${unplaced?`, ${unplaced} still in the pool`:''}</b>
+         <div style="margin-top:10px">${misses.map(m => `<div style="margin-bottom:6px"><b>${esc(m.name)}</b> · ${m.why}</div>`).join('')}</div>`;
+    if(PROGRESS.sortBest == null || right > PROGRESS.sortBest){ PROGRESS.sortBest = right; saveProgress(); }
+    paintProgress();
+  };
+  el.querySelector('#resetSort').onclick = () => {
+    el.querySelectorAll('.bin .chip').forEach(c => {
+      c.classList.remove('right','wrong','picked');
+      pool.appendChild(c);
+      st.place[+c.dataset.i] = 'pool';
+    });
+    saveProgress();
+    el.querySelector('#sortFb').className = 'feedback';
+  };
+  wire();
+};
+
+/* ============================ VIEW: FIELD TEST ============================ */
+let activeScen = null, scenNode = null, scenTrail = [];
+RENDER.field = function(){
+  const F = SPEC.field;
+  const el = document.getElementById('v-field');
+  if(!activeScen && PROGRESS.scenState){
+    const s = F.scenarios.find(x => x.id === PROGRESS.scenState.id);
+    if(s && s.nodes[PROGRESS.scenState.node]){
+      activeScen = s; scenNode = PROGRESS.scenState.node; scenTrail = (PROGRESS.scenState.trail || []).slice();
+    } else { PROGRESS.scenState = null; }
+  }
+  if(activeScen) return paintScen();
+  el.innerHTML = `
+    <span class="eyebrow">Part four</span>
+    <h2>${esc(F.head)}</h2>
+    <p class="sub">${F.sub}</p>
+    <div class="scen-pick">
+      ${F.scenarios.map(s => {
+        const rec = PROGRESS.scenarios.find(x => x.id === s.id);
+        return `<div class="card ${rec?'read':''}" data-scen="${s.id}">
+          <div class="no">${esc(s.line)}</div>
+          <div class="nm">${esc(s.title)}</div>
+          <div class="teaser">${s.setup}</div>
+          <span class="more">${rec ? (rec.win?'Held the standard · run again':'Ended short · run again') : 'Run the scenario'}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:26px"><button class="btn" id="toQuiz">Take the assessment</button></div>
+  `;
+  el.querySelectorAll('[data-scen]').forEach(c => c.onclick = () => {
+    activeScen = F.scenarios.find(s => s.id === c.dataset.scen);
+    scenNode = activeScen.start; scenTrail = [];
+    paintScen();
+  });
+  el.querySelector('#toQuiz').onclick = () => go('quiz');
+};
+function paintScen(){
+  const el = document.getElementById('v-field');
+  const s = activeScen, n = s.nodes[scenNode];
+  if(n.end){
+    const rec = PROGRESS.scenarios.find(x => x.id === s.id);
+    if(rec){ rec.win = rec.win || n.win; } else { PROGRESS.scenarios.push({id:s.id, win:n.win}); }
+    PROGRESS.scenState = null;
+    saveProgress(); paintProgress();
+  } else {
+    PROGRESS.scenState = { id:s.id, node:scenNode, trail:scenTrail.slice() };
+    saveProgress();
+  }
+  el.innerHTML = `
+    <button class="btn ghost" id="backScen" style="margin-bottom:18px">← All scenarios</button>
+    <span class="eyebrow">${esc(s.line)}</span>
+    <h2>${esc(s.title)}</h2>
+    <p class="sub">${s.setup}</p>
+    ${n.end ? `
+      <div class="outcome ${n.win?'win':(n.verdict==='Partial'?'':'loss')}">
+        <div class="verdict">${esc(n.verdict)}</div>
+        <p style="margin:0 0 14px">${n.text}</p>
+        <div style="border-top:1px solid var(--line);padding-top:12px">
+          <div class="hint" style="margin-bottom:6px">Why it played out that way</div>
+          <p style="margin:0">${n.why}</p>
+        </div>
+        <div class="trail">Your line: ${scenTrail.join(' → ')}</div>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="againScen">Run it again</button>
+        <button class="btn ghost" id="backScen2">Pick another scenario</button>
+      </div>`
+    : `
+      <div class="node">
+        <div class="stage">Decision ${scenTrail.length + 1}</div>
+        <p class="text">${n.text}</p>
+        <div class="choices">
+          ${n.choices.map((c,i) => `<button class="choice" data-to="${c.to}" data-i="${i}">${c.t}</button>`).join('')}
+        </div>
+      </div>
+      ${scenTrail.length ? `<div class="trail">Your line so far: ${scenTrail.join(' → ')}</div>` : ''}`}
+  `;
+  const back = () => { activeScen = null; PROGRESS.scenState = null; saveProgress(); RENDER.field(); };
+  el.querySelector('#backScen').onclick = back;
+  if(el.querySelector('#backScen2')) el.querySelector('#backScen2').onclick = back;
+  if(el.querySelector('#againScen')) el.querySelector('#againScen').onclick = () => { scenNode = s.start; scenTrail = []; paintScen(); };
+  el.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+    scenTrail.push('option ' + 'ABCD'[+b.dataset.i]);
+    scenNode = b.dataset.to;
+    paintScen();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
+
+/* ============================ VIEW: QUIZ ============================ */
+const QUIZ = SPEC.quiz.items;
+const PASS = SPEC.quiz.pass;
+let qi = 0, answers = [], quizOrder = [], quizLive = false;
+RENDER.quiz = function(){
+  const el = document.getElementById('v-quiz');
+  if(!quizLive) return paintQuizIntro(el);
+  paintQuestion(el);
+};
+function paintQuizIntro(el){
+  const prior = ATTEMPTS.filter(a => a.name === (PROFILE.name || 'Unnamed'));
+  const open = PROGRESS.quizState;
+  el.innerHTML = `
+    <span class="eyebrow">Part five</span>
+    <h2>Assessment</h2>
+    <p class="sub">${QUIZ.length} questions. You answer, it tells you immediately whether you got it, and it explains both the right answer and the one you picked. No going back to change it, which is the point. Pass mark is ${PASS} of ${QUIZ.length}. If you close the module partway through, the attempt waits for you.</p>
+    ${open ? `<div class="resumebar">
+      <div style="flex:1;min-width:220px">
+        <b style="font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--prism);display:block;margin-bottom:4px">Attempt in progress</b>
+        Question ${open.qi + 1} of ${QUIZ.length}, ${open.answers.filter(a=>a.ok).length} correct so far. Started ${ago(PROGRESS.updatedAt)}.
+      </div>
+      <button class="btn" id="resumeQ">Pick up at question ${open.qi + 1}</button>
+      <button class="btn ghost" id="dropQ">Scrap it, start fresh</button>
+    </div>` : ''}
+    <div class="panel">
+      <div class="hint" style="margin-bottom:8px">Recording as</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="qName" placeholder="Your name or employee ID" value="${esc(PROFILE.name)}" style="flex:1">
+        <button class="btn" id="startQuiz">Begin</button>
+      </div>
+      <label class="check" style="margin-top:14px">
+        <input type="checkbox" id="qShare" ${PROFILE.share?'checked':''}> Add this result to the shared cohort roster
+      </label>
+      <p class="note" style="margin:8px 0 0">This is practice, not the gate. The gate is the written assessment the Training Lead issues and marks under ${SPEC.certRef}.</p>
+      ${prior.length ? `<p class="note" style="margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px">Previous attempts under this name: ${prior.length}. Best so far: ${Math.max(...prior.map(a=>a.score))}/${QUIZ.length}.</p>` : ''}
+    </div>
+  `;
+  if(el.querySelector('#resumeQ')){
+    el.querySelector('#resumeQ').onclick = () => resumeQuiz();
+    el.querySelector('#dropQ').onclick = () => { PROGRESS.quizState = null; saveProgress(); RENDER.quiz(); };
+  }
+  el.querySelector('#startQuiz').onclick = () => {
+    PROFILE.name = el.querySelector('#qName').value.trim();
+    PROFILE.share = el.querySelector('#qShare').checked;
+    saveProfile();
+    qi = 0; answers = []; quizLive = true;
+    quizOrder = QUIZ.map((q,i)=>i).sort(()=>Math.random()-0.5);
+    PROGRESS.quizState = { order:quizOrder, qi:0, answers:[], name:PROFILE.name };
+    saveProgress();
+    RENDER.quiz();
+  };
+}
+function paintQuestion(el){
+  const q = QUIZ[quizOrder[qi]];
+  const order = q.opts.map((o,i)=>i).sort(()=>Math.random()-0.5);
+  el.innerHTML = `
+    <div class="qhead">
+      <span class="n">Question ${qi+1} of ${QUIZ.length}</span>
+      <span class="n">${answers.filter(a=>a.ok).length} correct so far</span>
+    </div>
+    <p class="qtext">${q.q}</p>
+    <div class="opts">
+      ${order.map((oi,pos) => `<button class="opt" data-oi="${oi}"><span class="ltr">${'ABCD'[pos]}</span><span>${q.opts[oi].t}</span></button>`).join('')}
+    </div>
+    <div class="rationale" id="rat"></div>
+    <div id="nextWrap" style="margin-top:18px;display:none">
+      <button class="btn" id="nextQ">${qi === QUIZ.length-1 ? 'See your score' : 'Next question'}</button>
+    </div>
+  `;
+  el.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    const oi = +b.dataset.oi, chosen = q.opts[oi], ok = !!chosen.ok;
+    const correct = q.opts.findIndex(o => o.ok);
+    el.querySelectorAll('.opt').forEach(x => {
+      x.disabled = true;
+      if(+x.dataset.oi === correct) x.classList.add('correct');
+      if(+x.dataset.oi === oi && !ok) x.classList.add('chosen-wrong');
+    });
+    const rat = el.querySelector('#rat');
+    rat.className = 'rationale on ' + (ok ? 'right' : 'wrong');
+    rat.innerHTML = ok
+      ? `<div class="tag">Correct</div><div class="why">${q.opts[correct].why}</div>`
+      : `<div class="tag">Not quite</div>
+         <div class="why"><b>You picked:</b> ${chosen.t}<br>${chosen.why}</div>
+         <div class="miss"><b>The answer is:</b> ${q.opts[correct].t}<br>${q.opts[correct].why}</div>`;
+    answers.push({ qi:quizOrder[qi], ok, chosen:oi });
+    PROGRESS.quizState = { order:quizOrder, qi:answers.length, answers:answers.slice(), name:PROFILE.name };
+    saveProgress();
+    el.querySelector('#nextWrap').style.display = 'block';
+    el.querySelector('#nextQ').onclick = () => {
+      qi++;
+      if(qi >= QUIZ.length) finishQuiz(el); else paintQuestion(el);
+      window.scrollTo({top:0, behavior:'smooth'});
+    };
+  });
+}
+function resumeQuiz(){
+  const st = PROGRESS.quizState;
+  if(!st) return;
+  quizOrder = st.order; answers = st.answers.slice(); qi = st.qi; quizLive = true;
+  if(st.name && !PROFILE.name){ PROFILE.name = st.name; saveProfile(); }
+  const el = document.getElementById('v-quiz');
+  if(qi >= QUIZ.length) finishQuiz(el); else paintQuestion(el);
+}
+async function finishQuiz(el){
+  quizLive = false;
+  PROGRESS.quizState = null;
+  const score = answers.filter(a=>a.ok).length;
+  const pct = Math.round(score/QUIZ.length*100);
+  const attempt = {
+    id: 'a' + Date.now() + Math.floor(Math.random()*999),
+    name: PROFILE.name || 'Unnamed',
+    when: new Date().toISOString(),
+    score, total: QUIZ.length, pct,
+    detail: answers.map(a => ({ q:a.qi, ok:a.ok, chosen:a.chosen }))
+  };
+  ATTEMPTS.push(attempt);
+  PROGRESS.quizTaken = true;
+  await saveAttempts(); await saveProgress();
+  if(PROFILE.share){
+    const roster = (await store.get(NS+'roster', true)) || [];
+    roster.push({ name:attempt.name, when:attempt.when, score, total:QUIZ.length, pct });
+    await store.set(NS+'roster', roster.slice(-300), true);
+  }
+  const pass = score >= PASS;
+  const missed = answers.filter(a => !a.ok).map(a => QUIZ[a.qi].q);
+  el.innerHTML = `
+    <div class="scorewrap">
+      <div class="hint">Attempt ${ATTEMPTS.filter(a=>a.name===attempt.name).length} · ${esc(attempt.name)}</div>
+      <div class="bigscore">${score}<span style="color:var(--muted);font-size:.5em">/${QUIZ.length}</span></div>
+      <div class="stamp ${pass?'':'fail'}">${pass ? 'At standard' : 'Review needed'}</div>
+      <p class="sub" style="margin:10px auto 0">${pass ? SPEC.quiz.passMsg : SPEC.quiz.failMsg}</p>
+    </div>
+    ${missed.length ? `<div class="panel"><div class="hint" style="margin-bottom:10px">What you missed</div>
+      ${missed.map(m => `<div style="border-top:1px solid var(--line);padding:10px 0;font-size:15px">${m}</div>`).join('')}</div>` : ''}
+    <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="retake">Take it again</button>
+      <button class="btn ghost" id="toRecords">See the record log</button>
+      <button class="btn ghost" id="toGal">Back to the cards</button>
+    </div>
+  `;
+  el.querySelector('#retake').onclick = () => { qi=0; answers=[]; quizLive=false; RENDER.quiz(); };
+  el.querySelector('#toRecords').onclick = () => go('records');
+  el.querySelector('#toGal').onclick = () => go('gallery');
+  paintProgress();
+}
+
+/* ============================ VIEW: RECORDS ============================ */
+RENDER.records = function(){
+  const el = document.getElementById('v-records');
+  const mine = ATTEMPTS.slice().sort((a,b) => new Date(b.when) - new Date(a.when));
+  const best = mine.length ? Math.max(...mine.map(a=>a.score)) : 0;
+  const avg  = mine.length ? (mine.reduce((s,a)=>s+a.score,0)/mine.length).toFixed(1) : '0';
+  const first = mine.length ? mine[mine.length-1].score : 0;
+
+  const acc = QUIZ.map((q,i) => {
+    const tries = ATTEMPTS.flatMap(a => a.detail.filter(d => d.q === i));
+    const right = tries.filter(d => d.ok).length;
+    return { i, q:q.q, tries:tries.length, pct: tries.length ? Math.round(right/tries.length*100) : null };
+  }).filter(x => x.tries > 0).sort((a,b) => a.pct - b.pct);
+
+  el.innerHTML = `
+    <span class="eyebrow">Part six</span>
+    <h2>Records</h2>
+    <p class="sub">Every attempt logged on this device, plus which questions keep tripping people up. A criterion failing across several operators is a curriculum finding under ${SPEC.qaRef}, not a coaching matter, so this page is worth showing the Training Lead.</p>
+    <div class="panel" style="margin-bottom:24px">
+      <div class="hint" style="margin-bottom:8px">Session state</div>
+      <div style="font-size:15px">Last saved ${PROGRESS.updatedAt ? ago(PROGRESS.updatedAt) + ' (' + new Date(PROGRESS.updatedAt).toLocaleString() + ')' : 'never'}.
+      ${PROGRESS.lastTab ? 'Last section open: ' + esc(tabLabel(PROGRESS.lastTab)) + '.' : ''}
+      ${PROGRESS.quizState ? '<b>An assessment is paused at question ' + (PROGRESS.quizState.qi + 1) + '.</b>' : ''}
+      ${PROGRESS.scenState ? 'A scenario is paused mid-branch.' : ''}</div>
+    </div>
+
+    ${mine.length ? `
+    <div class="statgrid">
+      <div class="stat"><div class="k">Attempts</div><div class="v">${mine.length}</div></div>
+      <div class="stat"><div class="k">Best score</div><div class="v">${best}<span style="font-size:.5em;color:var(--muted)">/${QUIZ.length}</span></div></div>
+      <div class="stat"><div class="k">Average</div><div class="v">${avg}</div></div>
+      <div class="stat"><div class="k">First to latest</div><div class="v">${first} → ${mine[0].score}</div></div>
+    </div>
+
+    <h3>Weakest questions first</h3>
+    <div class="qbars">
+      ${acc.slice(0,6).map(a => `
+        <div class="qbar">
+          <div class="track"><i style="width:${a.pct}%;background:${a.pct<50?'var(--crimson)':a.pct<80?'var(--amber)':'var(--green)'}"></i>
+            <span>${esc(a.q.length > 62 ? a.q.slice(0,62)+'…' : a.q)}</span></div>
+          <div class="pct">${a.pct}% · ${a.tries}x</div>
+        </div>`).join('')}
+    </div>
+
+    <h3>Attempt log</h3>
+    <div style="overflow-x:auto">
+      <table class="rec">
+        <thead><tr><th>#</th><th>Name</th><th>Date</th><th>Score</th><th>%</th><th>Missed</th></tr></thead>
+        <tbody>
+          ${mine.map((a,idx) => `<tr>
+            <td>${mine.length-idx}</td>
+            <td>${esc(a.name)}</td>
+            <td style="white-space:nowrap">${new Date(a.when).toLocaleString()}</td>
+            <td>${a.score}/${a.total}</td>
+            <td>${a.pct}%</td>
+            <td style="color:var(--muted);font-family:var(--mono);font-size:12px">${a.detail.filter(d=>!d.ok).map(d=>'Q'+(d.q+1)).join(' ') || 'none'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : `<div class="panel"><b style="font-family:var(--display);letter-spacing:.1em;text-transform:uppercase">Nothing logged yet</b>
+      <p style="margin:10px 0 16px">Take the assessment and every attempt lands here with the date, score, and which questions went wrong.</p>
+      <button class="btn" id="goQuizEmpty">Go to the assessment</button></div>`}
+
+    <h3>Activity outside the assessment</h3>
+    <table class="rec">
+      <tbody>
+        <tr><td>Cards unsealed</td><td>${PROGRESS.dossiers.length} of ${GAL_TOTAL}</td></tr>
+        <tr><td>Best sort</td><td>${PROGRESS.sortBest == null ? 'not attempted' : PROGRESS.sortBest + ' of ' + SPEC.sort.items.length}</td></tr>
+        <tr><td>Scenarios run</td><td>${PROGRESS.scenarios.length} of ${SPEC.field.scenarios.length}${PROGRESS.scenarios.length ? ' · standard held in ' + PROGRESS.scenarios.filter(s=>s.win).length : ''}</td></tr>
+        <tr><td>Ledger rows revealed</td><td>${PROGRESS.revealed.length} of ${SPEC.ledger.rows.length}</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Export and roster</h3>
+    <div class="toolbar">
+      <button class="btn" id="csvBtn" ${mine.length?'':'disabled'}>Show CSV</button>
+      <button class="btn ghost" id="dlBtn" ${mine.length?'':'disabled'}>Download CSV</button>
+      <button class="btn ghost" id="rosterBtn">Load cohort roster</button>
+      <button class="btn ghost danger" id="clearBtn" ${mine.length?'':'disabled'}>Clear my records</button>
+    </div>
+    <textarea class="csv" id="csvOut" readonly></textarea>
+    <div id="rosterOut"></div>
+    <p class="note" style="margin-top:18px">Records are stored per person on this device. The cohort roster is a shared list, so anything you send there is readable by everyone else using this module.</p>
+
+    <h3>Move progress to another machine</h3>
+    <p class="note" style="margin-bottom:14px">This copies your whole state, scores, cards, sort, scenarios, and any paused attempt, into a block of text. Paste it into the same box on another device to land exactly where you left off.</p>
+    <div class="toolbar">
+      <button class="btn ghost" id="expBtn">Copy my progress</button>
+      <button class="btn ghost" id="impBtn">Paste progress in</button>
+    </div>
+    <textarea class="csv" id="stateBox" placeholder="Paste a progress block here, then press Restore."></textarea>
+    <div id="impActions" style="margin-top:10px;display:none"><button class="btn" id="doImp">Restore this progress</button></div>
+    <div id="impStatus" class="feedback"></div>
+  `;
+
+  if(el.querySelector('#goQuizEmpty')) el.querySelector('#goQuizEmpty').onclick = () => go('quiz');
+
+  const csv = () => {
+    const head = ['attempt','name','timestamp','score','total','percent', ...QUIZ.map((q,i)=>'Q'+(i+1))];
+    const rows = ATTEMPTS.map((a,i) => {
+      const per = QUIZ.map((q,qi2) => { const d = a.detail.find(x=>x.q===qi2); return d ? (d.ok?1:0) : ''; });
+      return [i+1, `"${String(a.name).replace(/"/g,'""')}"`, a.when, a.score, a.total, a.pct, ...per];
+    });
+    return [head.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  };
+  const out = el.querySelector('#csvOut');
+  if(el.querySelector('#csvBtn')) el.querySelector('#csvBtn').onclick = () => {
+    out.value = csv(); out.classList.add('on'); out.focus(); out.select();
+  };
+  if(el.querySelector('#dlBtn')) el.querySelector('#dlBtn').onclick = () => {
+    try{
+      const blob = new Blob([csv()], {type:'text/csv'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = SPEC.code.toLowerCase() + '-results.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+    }catch(e){ out.value = csv(); out.classList.add('on'); }
+  };
+  el.querySelector('#rosterBtn').onclick = async () => {
+    const roster = (await store.get(NS+'roster', true)) || [];
+    const box = el.querySelector('#rosterOut');
+    if(!roster.length){ box.innerHTML = `<p class="note">Roster is empty. Results only land here when someone turns on sharing before taking the assessment.</p>`; return; }
+    const sorted = roster.slice().sort((a,b) => b.score - a.score || new Date(a.when) - new Date(b.when));
+    box.innerHTML = `<h3>Cohort roster · ${roster.length} entries</h3><div style="overflow-x:auto"><table class="rec">
+      <thead><tr><th>Rank</th><th>Name</th><th>Score</th><th>%</th><th>Date</th></tr></thead>
+      <tbody>${sorted.map((r,i) => `<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${r.score}/${r.total}</td><td>${r.pct}%</td><td style="white-space:nowrap">${new Date(r.when).toLocaleDateString()}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  };
+  if(el.querySelector('#clearBtn')) el.querySelector('#clearBtn').onclick = async function(){
+    if(this.dataset.armed !== '1'){ this.dataset.armed = '1'; this.textContent = 'Tap again to erase everything'; return; }
+    ATTEMPTS = [];
+    PROGRESS = { visited:['records'], dossiers:[], sortBest:null, scenarios:[], quizTaken:false,
+      lastTab:'records', revealed:[], sortState:null, scenState:null, quizState:null, updatedAt:null };
+    await saveAttempts(); await saveProgress();
+    RENDER.records(); paintProgress();
+  };
+
+  const box = el.querySelector('#stateBox');
+  el.querySelector('#expBtn').onclick = () => {
+    box.value = btoa(unescape(encodeURIComponent(JSON.stringify({ v:1, m:SPEC.id, profile:PROFILE, progress:PROGRESS, attempts:ATTEMPTS }))));
+    box.classList.add('on'); box.readOnly = true; box.focus(); box.select();
+    el.querySelector('#impActions').style.display = 'none';
+    toast('expBtn','Selected, now copy it');
+  };
+  el.querySelector('#impBtn').onclick = () => {
+    box.value = ''; box.readOnly = false; box.classList.add('on'); box.focus();
+    el.querySelector('#impActions').style.display = 'block';
+  };
+  el.querySelector('#doImp').onclick = async () => {
+    const st = document.getElementById('impStatus');
+    try{
+      const data = JSON.parse(decodeURIComponent(escape(atob(box.value.trim()))));
+      if(!data.progress) throw new Error('bad block');
+      if(data.m && data.m !== SPEC.id){
+        st.className = 'feedback on bad';
+        st.textContent = 'That block is from a different module (' + data.m.toUpperCase() + '). Paste it into that one instead.';
+        return;
+      }
+      PROFILE = Object.assign(PROFILE, data.profile || {});
+      PROGRESS = Object.assign(PROGRESS, data.progress);
+      if(Array.isArray(data.attempts)) ATTEMPTS = data.attempts;
+      await saveProfile(); await saveAttempts(); await saveProgress();
+      box.classList.remove('on'); el.querySelector('#impActions').style.display = 'none';
+      ['v-brief'].forEach(id => { const v = document.getElementById(id); if(v) delete v.dataset.built; });
+      activeScen = null; quizLive = false;
+      RENDER.records(); paintProgress();
+      const st2 = document.getElementById('impStatus');
+      st2.className = 'feedback on good';
+      st2.textContent = 'Restored. Sections, scores, and any paused attempt are back where they were.';
+    }catch(e){
+      st.className = 'feedback on bad';
+      st.textContent = "That block didn't read as progress data. Copy the whole thing, including the very end.";
+    }
+  };
+};
+
+/* ============================ BOOT ============================ */
+(async function(){
+  await loadAll();
+  buildHead();
+  buildTabs();
+  const returning = !!(PROGRESS.lastTab && PROGRESS.updatedAt);
+  go(returning ? PROGRESS.lastTab : 'brief');
+  if(returning) showResume();
+  setInterval(paintSaved, 60000);
+})();
+</script>
